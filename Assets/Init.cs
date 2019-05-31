@@ -9,11 +9,6 @@ using UnityEngine.Rendering;
 
 public class Init : MonoBehaviour
 {
-    class testTable
-    {
-        public int num;
-    }
-
     struct Position
     {
         public int row;
@@ -72,7 +67,7 @@ public class Init : MonoBehaviour
 
     class Plant
     {
-        public int PlantId { get; set; }
+        [PrimaryKey, AutoIncrement] public int PlantId { get; set; }
         public string Name { get; set; }
         public int SlotId { get; set; }
         public int PlantDefinitionId { get; set; }
@@ -80,10 +75,17 @@ public class Init : MonoBehaviour
 
     class PlantDefinition
     {
-        public int PlantDefintionId { get; set; }
+        [PrimaryKey, AutoIncrement] public int PlantDefintionId { get; set; }
         public string Name { get; set; }
     }
 
+    class Action
+    {
+        [PrimaryKey, AutoIncrement] public int ActionId { get; set; }
+        public string ActionType { get; set; }
+        public string ActionData { get; set; }
+    }
+    
 
     // Start is called before the first frame update
     void Start()
@@ -97,6 +99,27 @@ public class Init : MonoBehaviour
         PlantRadishes(db);
     }
 
+    Bed CreateBed(SQLiteConnection db, string name, int rows, int cols)
+    {
+        var bed = new Bed {Name = name, RowSize = rows, ColumnSize = cols};
+        db.Insert(bed);
+
+        for (int row = 0; row < rows; row++)
+        {
+            for (int col = 0; col < cols; col++)
+            {
+                db.Insert(new Foot
+                {
+                    BedId = bed.BedId,
+                    Row = row,
+                    Column = col
+                });
+            }
+        }
+
+        return bed;
+    }
+    
     void PlantRadishes(SQLiteConnection db)
     {
         var radishes = new PlantDefinition {Name = "Radish"};
@@ -112,21 +135,8 @@ public class Init : MonoBehaviour
 
         //Create Bed
 
-        var protoBed = new Bed {Name = "ProtoBed", RowSize = rows, ColumnSize = cols};
-        db.Insert(protoBed);
-
-        for (int row = 0; row < rows; row++)
-        {
-            for (int col = 0; col < cols; col++)
-            {
-                db.Insert(new Foot
-                {
-                    BedId = protoBed.BedId,
-                    Row = row,
-                    Column = col
-                });
-            }
-        }
+        var bed = CreateBed(db, "ProtoBed", 4, 4);
+        
 
         // Make a Grid to put the radishes in
         var firstGrid = new Grid()
@@ -146,18 +156,6 @@ public class Init : MonoBehaviour
                 positions.Add(new Position {row = row + gridRowStart, column = col + gridColStart});
             }
         }
-
-//        var query = db.Table<Foot>().Where(s => positions.Contains(new Position {row = s.Row, column = s.Column}));
-//
-//        foreach (var foot in query)
-//        {
-//            db.Insert(new Alloc
-//                {
-//                    GridId = firstGrid.GridId,
-//                    FootId = foot.FootId
-//                }
-//            );
-//        }
 
         var query = db.Table<Foot>();
 
@@ -218,46 +216,6 @@ public class Init : MonoBehaviour
         db.CreateTable<Slot>();
         db.CreateTable<Plant>();
         db.CreateTable<PlantDefinition>();
-    }
-
-    void holder()
-    {
-        var db = new SQLiteConnection("./assets/dbstore/test_db", true);
-        db.Trace = true;
-
-
-        var testQuery = "select * from testTable";
-//
-//        var queryHandle = SQLite3.Prepare2(connection.Handle, testQuery);
-//        
-//        queryHandle.
-
-//        var vals = connection.Query<testTable>(testQuery);
-//        
-//        Debug.Log(vals.Count);
-//        Debug.Log(vals[0].num);
-//        Debug.Log(vals[1].num);
-
-//        connection.Get<testTable>()
-
-//        var query = db.Table<testTable>().Where(s => s.Symbol.StartsWith("A"));
-//        var query = db.Table<testTable>();
-//
-//        var result = query.ToList();
-//
-//        foreach (var s in result)
-//            Console.WriteLine("num: " + s.num);
-
-//        db.CreateTable<Mytable>();
-//        db.Insert(new Mytable
-//            {Num = 5});
-
-        var query = db.Table<Mytable>();
-
-        var result = query.ToList();
-
-        foreach (var s in result)
-            Debug.Log("num: " + s.Num);
     }
 
     // Update is called once per frame
